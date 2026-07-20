@@ -1,0 +1,88 @@
+```gitignore
+# ===========================
+# Python
+# ===========================
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Compiled extensions
+*.pyd
+*.so
+*.dll
+
+# ===========================
+# Virtual Environment
+# ===========================
+.venv/
+venv/
+env/
+ENV/
+
+# ===========================
+# Build / Distribution
+# ===========================
+build/
+dist/
+*.spec
+
+# ===========================
+# PyInstaller Cache
+# ===========================
+__pycache__/
+*.manifest
+
+# ===========================
+# Python Packaging
+# ===========================
+*.egg-info/
+.eggs/
+pip-wheel-metadata/
+
+# ===========================
+# IDE
+# ===========================
+.vscode/
+.idea/
+
+# ===========================
+# OS Files
+# ===========================
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# ===========================
+# Logs
+# ===========================
+*.log
+
+# ===========================
+# Qt
+# ===========================
+*.qmlc
+*.jsc
+*.rcc
+
+# ===========================
+# Local Data
+# (Keep app data out of Git)
+# ===========================
+data/apps.json
+data/settings.json
+
+# Ignore extracted icons
+assets/icons/*
+
+# Keep folders in Git
+!assets/icons/.gitkeep
+!assets/themes/.gitkeep
+!data/.gitkeep
+!resources/.gitkeep
+
+# ===========================
+# Misc
+# ===========================
+*.tmp
+*.bak
+```
