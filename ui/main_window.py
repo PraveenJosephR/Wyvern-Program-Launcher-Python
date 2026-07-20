@@ -1,18 +1,24 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QMainWindow,
-    QPushButton,
-    QScrollArea,
-    QTabWidget,
-    QVBoxLayout,
     QWidget,
+    QMainWindow,
+    QVBoxLayout,
+    QHBoxLayout,
+    QLineEdit,
+    QPushButton,
+    QTabWidget,
+    QScrollArea,
+    QInputDialog,
+    QGridLayout,
 )
+
+from ui.launcher_tile import LauncherTile
 
 
 class MainWindow(QMainWindow):
+
+    TILE_COLUMNS = 5
+
     def __init__(self):
         super().__init__()
 
@@ -21,71 +27,141 @@ class MainWindow(QMainWindow):
         self.setMinimumSize(900, 600)
 
         self.build_ui()
+        self.add_tab("Home")
+
+    # ----------------------------
 
     def build_ui(self):
+
         central = QWidget()
         self.setCentralWidget(central)
 
-        main_layout = QVBoxLayout(central)
-        main_layout.setContentsMargins(15, 15, 15, 15)
-        main_layout.setSpacing(15)
+        layout = QVBoxLayout(central)
 
-        # ----------------------------
-        # Top Bar
-        # ----------------------------
-
-        top_bar = QHBoxLayout()
+        top = QHBoxLayout()
 
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("Search...")
 
         self.theme_button = QPushButton("🌙")
 
-        top_bar.addWidget(self.search_bar)
-        top_bar.addWidget(self.theme_button)
+        self.add_tab_button = QPushButton("+")
+        self.add_tab_button.setFixedWidth(40)
+        self.add_tab_button.clicked.connect(self.create_new_tab)
 
-        main_layout.addLayout(top_bar)
+        top.addWidget(self.search_bar)
+        top.addWidget(self.theme_button)
+        top.addWidget(self.add_tab_button)
 
-        # ----------------------------
-        # Tabs
-        # ----------------------------
+        layout.addLayout(top)
 
         self.tabs = QTabWidget()
+        self.tabs.setTabsClosable(True)
+        self.tabs.tabCloseRequested.connect(self.remove_tab)
 
-        home_page = QWidget()
-        self.tabs.addTab(home_page, "Home")
+        layout.addWidget(self.tabs)
 
-        main_layout.addWidget(self.tabs)
+    # ----------------------------
 
-        # ----------------------------
-        # Home Layout
-        # ----------------------------
+    def add_tab(self, name):
 
-        home_layout = QVBoxLayout(home_page)
-        home_layout.setContentsMargins(10, 10, 10, 10)
+        page = QWidget()
 
-        self.scroll = QScrollArea()
-        self.scroll.setWidgetResizable(True)
+        page.tiles = []
 
-        home_layout.addWidget(self.scroll)
+        page_layout = QVBoxLayout(page)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+
+        page_layout.addWidget(scroll)
 
         container = QWidget()
-        self.scroll.setWidget(container)
 
-        self.tile_layout = QHBoxLayout(container)
-        self.tile_layout.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.tile_layout.setSpacing(15)
+        page.grid = QGridLayout(container)
+        page.grid.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        page.grid.setHorizontalSpacing(15)
+        page.grid.setVerticalSpacing(15)
 
-        # Temporary placeholder tile
-        placeholder = QLabel("➕")
-        placeholder.setFixedSize(140, 140)
-        placeholder.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        placeholder.setStyleSheet("""
-            QLabel{
-                border:2px dashed gray;
-                border-radius:12px;
-                font-size:36px;
-            }
-        """)
+        scroll.setWidget(container)
 
-        self.tile_layout.addWidget(placeholder)
+        self.tabs.addTab(page, name)
+
+        self.refresh_grid(page)
+
+    # ----------------------------
+
+    def refresh_grid(self, page):
+
+        while page.grid.count():
+
+            item = page.grid.takeAt(0)
+
+            widget = item.widget()
+
+            if widget:
+                widget.deleteLater()
+
+        row = 0
+        col = 0
+
+        for tile in page.tiles:
+
+            page.grid.addWidget(tile, row, col)
+
+            col += 1
+
+            if col >= self.TILE_COLUMNS:
+                col = 0
+                row += 1
+
+        plus = LauncherTile("+")
+        plus.clicked.connect(lambda: self.add_tile(page))
+
+        page.grid.addWidget(plus, row, col)
+
+    # ----------------------------
+
+    def create_new_tab(self):
+
+        text, ok = QInputDialog.getText(
+            self,
+            "New Tab",
+            "Tab Name:"
+        )
+
+        if ok and text.strip():
+            self.add_tab(text.strip())
+
+    # ----------------------------
+
+    def remove_tab(self, index):
+
+        if self.tabs.count() == 1:
+            return
+
+        self.tabs.removeTab(index)
+
+    # ----------------------------
+
+    def add_tile(self, page):
+
+        from ui.add_app_dialog import AddAppDialog
+
+        dialog = AddAppDialog(self)
+
+        if dialog.exec():
+
+            data = dialog.get_data()
+
+            if not data["title"] or not data["path"]:
+                return
+
+            tile = LauncherTile(
+                data["title"],
+                data["path"]
+            )
+
+            page.tiles.append(tile)
+
+            self.refresh_grid(page)
