@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("Software Launcher")
+        self.setWindowTitle("Wyvern")
         self.resize(1200, 750)
         self.setMinimumSize(900, 600)
 
