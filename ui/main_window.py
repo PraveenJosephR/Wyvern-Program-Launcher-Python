@@ -13,6 +13,8 @@ from PySide6.QtWidgets import (
 )
 
 from ui.launcher_tile import LauncherTile
+from ui.add_app_dialog import AddAppDialog
+from storage.json_storage import load_data, save_data
 
 
 class MainWindow(QMainWindow):
@@ -26,8 +28,18 @@ class MainWindow(QMainWindow):
         self.resize(1200, 750)
         self.setMinimumSize(900, 600)
 
+        self.data = load_data()
+
         self.build_ui()
-        self.add_tab("Home")
+
+        if self.data["tabs"]:
+
+            for tab in self.data["tabs"]:
+                self.add_tab(tab["name"], tab["tiles"])
+
+        else:
+
+            self.add_tab("Home")
 
     # ----------------------------
 
@@ -63,7 +75,10 @@ class MainWindow(QMainWindow):
 
     # ----------------------------
 
-    def add_tab(self, name):
+    def add_tab(self, name, tiles_data=None):
+
+        if tiles_data is None:
+            tiles_data = []
 
         page = QWidget()
 
@@ -79,15 +94,54 @@ class MainWindow(QMainWindow):
         container = QWidget()
 
         page.grid = QGridLayout(container)
-        page.grid.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+        page.grid.setAlignment(
+            Qt.AlignmentFlag.AlignTop |
+            Qt.AlignmentFlag.AlignLeft
+        )
+
         page.grid.setHorizontalSpacing(15)
         page.grid.setVerticalSpacing(15)
 
         scroll.setWidget(container)
 
+        for app in tiles_data:
+
+            page.tiles.append(
+                LauncherTile(
+                    app["title"],
+                    app["path"]
+                )
+            )
+
         self.tabs.addTab(page, name)
 
         self.refresh_grid(page)
+        
+    def save(self):
+
+        tabs = []
+
+        for i in range(self.tabs.count()):
+
+            page = self.tabs.widget(i)
+
+            tiles = []
+
+            for tile in page.tiles:
+
+                tiles.append({
+                    "title": tile.title,
+                    "path": tile.exe_path
+                })
+
+            tabs.append({
+                "name": self.tabs.tabText(i),
+                "tiles": tiles
+            })
+
+        save_data({
+            "tabs": tabs
+        })
 
     # ----------------------------
 
@@ -100,7 +154,7 @@ class MainWindow(QMainWindow):
             widget = item.widget()
 
             if widget:
-                widget.deleteLater()
+                widget.setParent(None)
 
         row = 0
         col = 0
@@ -131,7 +185,10 @@ class MainWindow(QMainWindow):
         )
 
         if ok and text.strip():
+
             self.add_tab(text.strip())
+
+            self.save()
 
     # ----------------------------
 
@@ -142,11 +199,11 @@ class MainWindow(QMainWindow):
 
         self.tabs.removeTab(index)
 
+        self.save()
+
     # ----------------------------
 
     def add_tile(self, page):
-
-        from ui.add_app_dialog import AddAppDialog
 
         dialog = AddAppDialog(self)
 
@@ -157,11 +214,13 @@ class MainWindow(QMainWindow):
             if not data["title"] or not data["path"]:
                 return
 
-            tile = LauncherTile(
-                data["title"],
-                data["path"]
+            page.tiles.append(
+                LauncherTile(
+                    data["title"],
+                    data["path"]
+                )
             )
 
-            page.tiles.append(tile)
-
             self.refresh_grid(page)
+
+            self.save()
