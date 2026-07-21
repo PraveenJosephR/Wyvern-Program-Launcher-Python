@@ -106,12 +106,16 @@ class MainWindow(QMainWindow):
 
         for app in tiles_data:
 
-            page.tiles.append(
-                LauncherTile(
-                    app["title"],
-                    app["path"]
-                )
+            tile = LauncherTile(
+                app["title"],
+                app["path"]
             )
+
+            tile.removeRequested.connect(
+                lambda t, p=page: self.remove_tile(p, t)
+            )
+
+            page.tiles.append(tile)
 
         self.tabs.addTab(page, name)
 
@@ -214,12 +218,26 @@ class MainWindow(QMainWindow):
             if not data["title"] or not data["path"]:
                 return
 
-            page.tiles.append(
-                LauncherTile(
-                    data["title"],
-                    data["path"]
-                )
+            tile = LauncherTile(
+                data["title"],
+                data["path"]
             )
+
+            tile.removeRequested.connect(
+                lambda t, p=page: self.remove_tile(p, t)
+            )
+
+            page.tiles.append(tile)
+
+            self.refresh_grid(page)
+
+            self.save()
+
+    def remove_tile(self, page, tile):
+
+        if tile in page.tiles:
+
+            page.tiles.remove(tile)
 
             self.refresh_grid(page)
 
