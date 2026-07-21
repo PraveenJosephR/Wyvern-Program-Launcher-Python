@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QInputDialog,
     QGridLayout,
+    QMessageBox
 )
 import math
 from ui.launcher_tile import LauncherTile
@@ -219,6 +220,19 @@ class MainWindow(QMainWindow):
         if self.tabs.count() == 1:
             return
 
+        tab_name = self.tabs.tabText(index)
+
+        reply = QMessageBox.question(
+            self,
+            "Delete Tab",
+            f"Delete tab '{tab_name}' and all its tiles?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if reply != QMessageBox.Yes:
+            return
+
         self.tabs.removeTab(index)
 
         self.save()
@@ -252,6 +266,17 @@ class MainWindow(QMainWindow):
             self.save()
 
     def remove_tile(self, page, tile):
+
+        reply = QMessageBox.question(
+            self,
+            "Delete Tile",
+            f"Delete '{tile.title}'?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+
+        if reply != QMessageBox.Yes:
+            return
 
         if tile in page.tiles:
 
