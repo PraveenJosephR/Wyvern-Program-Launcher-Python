@@ -17,25 +17,13 @@ class LauncherTile(QPushButton):
         self.setFixedSize(140, 140)
         self.setCursor(Qt.PointingHandCursor)
 
-        self.setStyleSheet("""
-            QPushButton{
-                border:2px solid #666;
-                border-radius:12px;
-                font-size:15px;
-                font-weight:bold;
-                padding:10px;
-                text-align:center;
-            }
-
-            QPushButton:hover{
-                border:2px solid #3b82f6;
-            }
-        """)
+        self.setObjectName("launcherTile")
 
         if self.exe_path:
             self.clicked.connect(self.launch)
 
         self.remove_button = QPushButton("×", self)
+        self.remove_button.setObjectName("removeButton")
         self.remove_button.setFixedSize(22, 22)
         self.remove_button.move(112, 6)
         self.remove_button.hide()

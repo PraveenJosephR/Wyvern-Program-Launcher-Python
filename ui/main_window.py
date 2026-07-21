@@ -11,11 +11,13 @@ from PySide6.QtWidgets import (
     QInputDialog,
     QGridLayout,
 )
-
+import math
 from ui.launcher_tile import LauncherTile
 from ui.add_app_dialog import AddAppDialog
 from storage.json_storage import load_data, save_data
-
+from assets.themes.themes import DARK, LIGHT
+import json
+import os
 
 class MainWindow(QMainWindow):
 
@@ -31,7 +33,7 @@ class MainWindow(QMainWindow):
         self.data = load_data()
 
         self.build_ui()
-
+        self.load_theme()
         if self.data["tabs"]:
 
             for tab in self.data["tabs"]:
@@ -55,7 +57,9 @@ class MainWindow(QMainWindow):
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("Search...")
 
-        self.theme_button = QPushButton("🌙")
+        self.theme_button = QPushButton()
+        self.theme_button.setFixedWidth(75)
+        self.theme_button.clicked.connect(self.toggle_theme)
 
         self.add_tab_button = QPushButton("+")
         self.add_tab_button.setFixedWidth(40)
@@ -87,8 +91,9 @@ class MainWindow(QMainWindow):
         page_layout = QVBoxLayout(page)
 
         scroll = QScrollArea()
+        
         scroll.setWidgetResizable(True)
-
+        page.scroll = scroll
         page_layout.addWidget(scroll)
 
         container = QWidget()
@@ -163,13 +168,26 @@ class MainWindow(QMainWindow):
         row = 0
         col = 0
 
+        viewport_width = page.scroll.viewport().width()
+
+        tile_width = 140
+        spacing = page.grid.horizontalSpacing()
+
+        columns = max(
+            1,
+            math.floor(
+                (viewport_width + spacing) /
+                (tile_width + spacing)
+            )
+        )
+
         for tile in page.tiles:
 
             page.grid.addWidget(tile, row, col)
 
             col += 1
 
-            if col >= self.TILE_COLUMNS:
+            if col >= columns:
                 col = 0
                 row += 1
 
@@ -242,3 +260,84 @@ class MainWindow(QMainWindow):
             self.refresh_grid(page)
 
             self.save()
+
+    def resizeEvent(self, event):
+
+        super().resizeEvent(event)
+
+        for i in range(self.tabs.count()):
+
+            page = self.tabs.widget(i)
+
+            self.refresh_grid(page)
+
+    def refresh_all_grids(self):
+
+        for i in range(self.tabs.count()):
+
+            page = self.tabs.widget(i)
+
+            self.refresh_grid(page)
+
+    def showEvent(self, event):
+
+        super().showEvent(event)
+
+        self.refresh_all_grids()
+
+    def load_theme(self):
+
+        settings_file = "data/settings.json"
+
+        if os.path.exists(settings_file):
+
+            with open(settings_file, "r", encoding="utf-8") as f:
+                settings = json.load(f)
+
+        else:
+
+            settings = {"theme": "dark"}
+
+        self.current_theme = settings.get("theme", "dark")
+
+        self.apply_theme()
+
+
+    def apply_theme(self):
+
+        if self.current_theme == "dark":
+
+            self.setStyleSheet(DARK)
+            self.theme_button.setText("☀")
+
+        else:
+
+            self.setStyleSheet(LIGHT)
+            self.theme_button.setText("🌙")
+
+
+    def toggle_theme(self):
+
+        self.current_theme = (
+            "light"
+            if self.current_theme == "dark"
+            else "dark"
+        )
+
+        self.apply_theme()
+
+        settings_file = "data/settings.json"
+
+        if os.path.exists(settings_file):
+
+            with open(settings_file, "r", encoding="utf-8") as f:
+                settings = json.load(f)
+
+        else:
+
+            settings = {}
+
+        settings["theme"] = self.current_theme
+
+        with open(settings_file, "w", encoding="utf-8") as f:
+            json.dump(settings, f, indent=4)

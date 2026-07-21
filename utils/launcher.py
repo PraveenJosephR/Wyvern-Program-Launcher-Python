@@ -1,5 +1,6 @@
 import os
 import subprocess
+import ctypes
 
 
 def launch_app(path: str):
@@ -12,4 +13,22 @@ def launch_app(path: str):
 
     folder = os.path.dirname(path)
 
-    subprocess.Popen(path, cwd=folder)
+    try:
+        subprocess.Popen(path, cwd=folder)
+
+    except OSError as e:
+
+        # WinError 740 = Requires elevation
+        if getattr(e, "winerror", None) == 740:
+
+            ctypes.windll.shell32.ShellExecuteW(
+                None,
+                "runas",
+                path,
+                None,
+                folder,
+                1
+            )
+
+        else:
+            raise
