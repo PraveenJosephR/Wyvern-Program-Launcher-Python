@@ -16,5 +16,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-    # build call ----> pyinstaller --onefile --windowed --icon=resources/app.ico main.py
