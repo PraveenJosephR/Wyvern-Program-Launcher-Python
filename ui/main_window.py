@@ -26,7 +26,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self):
         super().__init__()
-
+        self.loading = True
         self.setWindowTitle("Wyvern")
         self.resize(1200, 750)
         self.setMinimumSize(900, 600)
@@ -43,6 +43,8 @@ class MainWindow(QMainWindow):
         else:
 
             self.add_tab("Home")
+        self.restore_last_tab()
+        self.loading = False
 
     # ----------------------------
 
@@ -57,7 +59,7 @@ class MainWindow(QMainWindow):
 
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText("Search...")
-
+        self.search_bar.textChanged.connect(self.search_tiles)
         self.theme_button = QPushButton()
         self.theme_button.setFixedWidth(75)
         self.theme_button.clicked.connect(self.toggle_theme)
@@ -75,6 +77,7 @@ class MainWindow(QMainWindow):
         self.tabs = QTabWidget()
         self.tabs.setTabsClosable(True)
         self.tabs.tabCloseRequested.connect(self.remove_tab)
+        self.tabs.currentChanged.connect(self.save_last_tab)
 
         layout.addWidget(self.tabs)
 
@@ -132,6 +135,8 @@ class MainWindow(QMainWindow):
         tabs = []
 
         for i in range(self.tabs.count()):
+            if self.tabs.tabText(i) == "Search Results":
+                continue
 
             page = self.tabs.widget(i)
 
@@ -366,3 +371,84 @@ class MainWindow(QMainWindow):
 
         with open(settings_file, "w", encoding="utf-8") as f:
             json.dump(settings, f, indent=4)
+
+
+    def search_tiles(self, text):
+
+        text = text.strip().lower()
+
+        # Remove previous Search Results tab
+        for i in range(self.tabs.count()):
+            if self.tabs.tabText(i) == "Search Results":
+                self.tabs.removeTab(i)
+                break
+
+        if not text:
+            return
+
+        results = []
+
+        # Search every tab except Search Results
+        for i in range(self.tabs.count()):
+
+            if self.tabs.tabText(i) == "Search Results":
+                continue
+
+            page = self.tabs.widget(i)
+
+            for tile in page.tiles:
+
+                if text in tile.title.lower():
+                    results.append({
+                        "title": tile.title,
+                        "path": tile.exe_path
+                    })
+
+        if not results:
+            return
+
+        self.add_tab("Search Results", results)
+        self.tabs.setCurrentIndex(self.tabs.count() - 1)
+
+
+    def save_last_tab(self, index):
+        if self.loading:
+            return
+
+        if index < 0:
+            return
+
+        tab_name = self.tabs.tabText(index)
+
+        if tab_name == "Search Results":
+            return
+
+        settings_file = "data/settings.json"
+
+        import json
+
+        with open(settings_file, "r", encoding="utf-8") as f:
+            settings = json.load(f)
+
+        settings["last_tab"] = tab_name
+
+        with open(settings_file, "w", encoding="utf-8") as f:
+            json.dump(settings, f, indent=4)
+
+    def restore_last_tab(self):
+
+        import json
+
+        settings_file = "data/settings.json"
+
+        with open(settings_file, "r", encoding="utf-8") as f:
+            settings = json.load(f)
+
+        last_tab = settings.get("last_tab", "")
+
+        for i in range(self.tabs.count()):
+
+            if self.tabs.tabText(i) == last_tab:
+
+                self.tabs.setCurrentIndex(i)
+                return
