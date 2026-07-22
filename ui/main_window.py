@@ -117,7 +117,8 @@ class MainWindow(QMainWindow):
 
             tile = LauncherTile(
                 app["title"],
-                app["path"]
+                app["path"],
+                app.get("image", "")
             )
 
             tile.removeRequested.connect(
@@ -146,7 +147,8 @@ class MainWindow(QMainWindow):
 
                 tiles.append({
                     "title": tile.title,
-                    "path": tile.exe_path
+                    "path": tile.exe_path,
+                    "image": tile.image_data
                 })
 
             tabs.append({
@@ -257,7 +259,8 @@ class MainWindow(QMainWindow):
 
             tile = LauncherTile(
                 data["title"],
-                data["path"]
+                data["path"],
+                data["image"]
             )
 
             tile.removeRequested.connect(
