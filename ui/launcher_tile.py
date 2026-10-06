@@ -18,6 +18,10 @@ class LauncherTile(QPushButton):
         self.title = title
         self.exe_path = exe_path
         self.image_data = image_data
+        if self.exe_path:
+            self.setToolTip(self.title)
+
+
 
         self.setObjectName("launcherTile")
 
